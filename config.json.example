@@ -1,0 +1,37 @@
+{
+    "port": ,
+    "appName": "",
+    "appEnv": "",
+    "signatureKey": "",
+    "database": {
+        "host": "",
+        "port": ,
+        "name": "",
+        "username": "",
+        "password": "",
+        "maxOpenConnection": ,
+        "maxLifeTimeConnection": ,
+        "maxIdleConnection": ,
+        "maxIdleTime": 
+    },
+    "rateLimiterMaxRequest": ,
+    "rateLimiterTimeSecond": ,
+    "internalService": {
+        "user": {
+            "host": "",
+            "signatureKey": ""
+        }
+    },
+    "gcsType": "",
+    "gcsProjectID": "",
+    "gcsPrivateKeyID": "",
+    "gcsPrivateKey": "",
+    "gcsClientEmail": "",
+    "gcsClientID": "",
+    "gcsAuthURI": "",
+    "gcsTokenURI": "",
+    "gcsAuthProviderX509CertURL": "",
+    "gcsClientX509CertURL": "",
+    "gcsUniverseDomain": "",
+    "gcsBuckettName": ""
+}
