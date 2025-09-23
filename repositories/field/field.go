@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/google/uuid"
 	errWrap "github.com/thomzes/field-service-booking-app/common/error"
 	errConstant "github.com/thomzes/field-service-booking-app/constants/error"
 	errField "github.com/thomzes/field-service-booking-app/constants/error/field"
@@ -26,7 +27,7 @@ type IFieldRepository interface {
 	Delete(context.Context, string) error
 }
 
-func NewFieldRepository(db *gorm.DB) FieldRepository {
+func NewFieldRepository(db *gorm.DB) IFieldRepository {
 	return &FieldRepository{db: db}
 }
 
@@ -80,13 +81,43 @@ func (f *FieldRepository) FindByUUID(ctx context.Context, uuid string) (*models.
 }
 
 func (f *FieldRepository) Create(ctx context.Context, req *models.Field) (*models.Field, error) {
+	field := models.Field{
+		UUID:         uuid.New(),
+		Code:         req.Code,
+		Name:         req.Name,
+		Images:       req.Images,
+		PricePerHour: req.PricePerHour,
+	}
 
+	err := f.db.WithContext(ctx).Create(&field).Error
+	if err != nil {
+		return nil, errWrap.WrapError(errConstant.ErrSQLError)
+	}
+
+	return &field, nil
 }
 
-func (f *FieldRepository) Update(ctx context.Context, uuid string, field *models.Field) (*models.Field, error) {
+func (f *FieldRepository) Update(ctx context.Context, uuid string, req *models.Field) (*models.Field, error) {
+	field := models.Field{
+		Code:         req.Code,
+		Name:         req.Name,
+		Images:       req.Images,
+		PricePerHour: req.PricePerHour,
+	}
 
+	err := f.db.WithContext(ctx).Where("uuid = ?", uuid).Updates(&field).Error
+	if err != nil {
+		return nil, errWrap.WrapError(errConstant.ErrSQLError)
+	}
+
+	return &field, nil
 }
 
 func (f *FieldRepository) Delete(ctx context.Context, uuid string) error {
+	err := f.db.WithContext(ctx).Where("uuid = ?", uuid).Delete(&models.Field{}).Error
+	if err != nil {
+		return errWrap.WrapError(errConstant.ErrSQLError)
+	}
 
+	return nil
 }
