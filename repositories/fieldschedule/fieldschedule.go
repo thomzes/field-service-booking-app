@@ -23,7 +23,7 @@ type IFieldScheduleRepository interface {
 	FindAllByFieldIDAndDate(context.Context, int, string) ([]models.FieldSchedule, error)
 	FindByUUID(context.Context, string) (*models.FieldSchedule, error)
 	FindByDateAndTimeID(context.Context, string, int, int) (*models.FieldSchedule, error)
-	Create(context.Context, *models.FieldSchedule) error
+	Create(context.Context, []models.FieldSchedule) error
 	Update(context.Context, string, *models.FieldSchedule) (*models.FieldSchedule, error)
 	UpdateStatus(context.Context, constants.FieldScheduleStatus, string) error
 	Delete(context.Context, string) error
@@ -97,7 +97,7 @@ func (f *FieldScheduleRepository) FindByDateAndTimeID(ctx context.Context, date 
 	return &fieldSchedule, nil
 }
 
-func (f *FieldScheduleRepository) Create(ctx context.Context, req *models.FieldSchedule) error {
+func (f *FieldScheduleRepository) Create(ctx context.Context, req []models.FieldSchedule) error {
 	err := f.db.WithContext(ctx).Create(&req).Error
 	if err != nil {
 		return errWrap.WrapError(errConstant.ErrSQLError)
