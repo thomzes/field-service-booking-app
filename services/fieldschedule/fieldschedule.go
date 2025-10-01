@@ -20,7 +20,7 @@ type FieldScheduleService struct {
 
 type IFieldScheduleService interface {
 	GetAllWithPagination(context.Context, *dto.FieldScheduleRequestParam) (*util.PaginationResult, error)
-	GetAllByFieldIDAndDate(context.Context, int, string) ([]dto.FieldScheduleResponse, error)
+	GetAllByFieldIDAndDate(context.Context, string, string) ([]dto.FieldScheduleResponse, error)
 	GetByUUID(context.Context, string) (*dto.FieldScheduleResponse, error)
 	GenerateScheduleForOneMonth(context.Context, *dto.GenerateFieldScheduleForOneMonthRequest) error
 	Create(context.Context, *dto.FieldScheduleRequest) error
@@ -93,7 +93,7 @@ func (f *FieldScheduleService) convertMonthName(inputString string) string {
 	return formattedDate
 }
 
-func (f *FieldScheduleService) GetAllByFieldIDAndDate(ctx context.Context, id int, date string) ([]dto.FieldScheduleResponse, error) {
+func (f *FieldScheduleService) GetAllByFieldIDAndDate(ctx context.Context, id string, date string) ([]dto.FieldScheduleResponse, error) {
 	fielSchedules, err := f.repository.GetFieldSchedule().FindAllByFieldIDAndDate(ctx, id, date)
 	if err != nil {
 		return nil, err
