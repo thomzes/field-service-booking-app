@@ -20,7 +20,7 @@ type FieldScheduleRepository struct {
 
 type IFieldScheduleRepository interface {
 	FindAllWithPagination(context.Context, *dto.FieldScheduleRequestParam) ([]models.FieldSchedule, int64, error)
-	FindAllByFieldIDAndDate(context.Context, int, string) ([]models.FieldSchedule, error)
+	FindAllByFieldIDAndDate(context.Context, string, string) ([]models.FieldSchedule, error)
 	FindByUUID(context.Context, string) (*models.FieldSchedule, error)
 	FindByDateAndTimeID(context.Context, string, int, int) (*models.FieldSchedule, error)
 	Create(context.Context, []models.FieldSchedule) error
