@@ -14,11 +14,11 @@ type FieldScheduleRoute struct {
 	client     clients.IClientRegistry
 }
 
-type IFieldScheduleRoutes interface {
+type IFieldScheduleRoute interface {
 	Run()
 }
 
-func NewFieldScheduleController(controller controllers.IControllerRegistry, group *gin.RouterGroup, client clients.IClientRegistry) IFieldScheduleRoutes {
+func NewFieldScheduleRoute(controller controllers.IControllerRegistry, group *gin.RouterGroup, client clients.IClientRegistry) IFieldScheduleRoutes {
 	return &FieldScheduleRoute{
 		controller: controller,
 		group:      group,
