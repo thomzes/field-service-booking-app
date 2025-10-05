@@ -28,8 +28,8 @@ func NewFieldRoute(controller controllers.IControllerRegistry, group *gin.Router
 
 func (f *FieldRoute) Run() {
 	group := f.group.Group("/field")
-	group.GET("", middlewares.AuthenticateWithoutToken(), f.controller.GetField().GetAllWithPagination)
-	group.GET(":uuid", middlewares.Authenticate(), f.controller.GetField().GetByUUID)
+	group.GET("", middlewares.AuthenticateWithoutToken(), f.controller.GetField().GetAllWithoutPagination)
+	group.GET(":uuid", middlewares.AuthenticateWithoutToken(), f.controller.GetField().GetByUUID)
 	group.Use(middlewares.Authenticate())
 	group.GET("/pagination", middlewares.CheckRole([]string{
 		constants.Admin,
@@ -44,7 +44,7 @@ func (f *FieldRoute) Run() {
 		constants.Admin,
 	}, f.client),
 		f.controller.GetField().Update)
-	group.DELETE(":/uuid", middlewares.CheckRole([]string{
+	group.DELETE("/:uuid", middlewares.CheckRole([]string{
 		constants.Admin,
 	}, f.client),
 		f.controller.GetField().Delete)

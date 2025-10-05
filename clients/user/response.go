@@ -4,7 +4,7 @@ import "github.com/google/uuid"
 
 type UserResponse struct {
 	Code    int      `json:"code"`
-	Status  int      `json:"status"`
+	Status  string   `json:"status"`
 	Message string   `json:"message"`
 	Data    UserData `json:"data"`
 }

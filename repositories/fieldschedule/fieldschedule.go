@@ -20,7 +20,7 @@ type FieldScheduleRepository struct {
 
 type IFieldScheduleRepository interface {
 	FindAllWithPagination(context.Context, *dto.FieldScheduleRequestParam) ([]models.FieldSchedule, int64, error)
-	FindAllByFieldIDAndDate(context.Context, string, string) ([]models.FieldSchedule, error)
+	FindAllByFieldIDAndDate(context.Context, int, string) ([]models.FieldSchedule, error)
 	FindByUUID(context.Context, string) (*models.FieldSchedule, error)
 	FindByDateAndTimeID(context.Context, string, int, int) (*models.FieldSchedule, error)
 	Create(context.Context, []models.FieldSchedule) error
@@ -61,9 +61,10 @@ func (f *FieldScheduleRepository) FindAllWithPagination(ctx context.Context, par
 	return fieldSchedules, total, nil
 }
 
-func (f *FieldScheduleRepository) FindAllByFieldIDAndDate(ctx context.Context, field_id int, date string) ([]models.FieldSchedule, error) {
+func (f *FieldScheduleRepository) FindAllByFieldIDAndDate(ctx context.Context, fieldID int, date string) ([]models.FieldSchedule, error) {
 	var fieldSchedules []models.FieldSchedule
-	err := f.db.WithContext(ctx).Preload("Field").Preload("Time").Where("field_id = ?", field_id).Where("date = ?", date).Joins("LEFT JOIN times ON field_schedules.time_id = times.id").Order("times.start_date asc").Find(&fieldSchedules).Error
+
+	err := f.db.WithContext(ctx).Preload("Field").Preload("Time").Where("field_id = ?", fieldID).Where("date = ?", date).Joins("LEFT JOIN times ON field_schedules.time_id = times.id").Order("times.start_time asc").Find(&fieldSchedules).Error
 	if err != nil {
 		return nil, errWrap.WrapError(errConstant.ErrSQLError)
 	}
@@ -73,7 +74,7 @@ func (f *FieldScheduleRepository) FindAllByFieldIDAndDate(ctx context.Context, f
 
 func (f *FieldScheduleRepository) FindByUUID(ctx context.Context, uuid string) (*models.FieldSchedule, error) {
 	var fieldSchedule models.FieldSchedule
-	err := f.db.WithContext(ctx).Preload("Field").Preload("Time").Where("uuid = ?", uuid).Find(&fieldSchedule).Error
+	err := f.db.WithContext(ctx).Preload("Field").Preload("Time").Where("uuid = ?", uuid).First(&fieldSchedule).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, errWrap.WrapError(errFieldSchedule.ErrFieldScheduleNotFound)
@@ -86,10 +87,10 @@ func (f *FieldScheduleRepository) FindByUUID(ctx context.Context, uuid string) (
 
 func (f *FieldScheduleRepository) FindByDateAndTimeID(ctx context.Context, date string, timeID int, fieldID int) (*models.FieldSchedule, error) {
 	var fieldSchedule models.FieldSchedule
-	err := f.db.WithContext(ctx).Where("date = ?", date).Where("time_id = ?", timeID).Where("field_id = ?", fieldID).Find(&fieldSchedule).Error
+	err := f.db.WithContext(ctx).Where("date = ?", date).Where("time_id = ?", timeID).Where("field_id = ?", fieldID).First(&fieldSchedule).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, errWrap.WrapError(errFieldSchedule.ErrFieldScheduleNotFound)
+			return nil, nil
 		}
 		return nil, errWrap.WrapError(errConstant.ErrSQLError)
 	}

@@ -9,6 +9,7 @@ import (
 	"path"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/thomzes/field-service-booking-app/common/gcs"
 	"github.com/thomzes/field-service-booking-app/common/util"
 	errConstant "github.com/thomzes/field-service-booking-app/constants/error"
@@ -36,13 +37,13 @@ func NewFieldService(repository repositories.IRepositoryRegistry, gcs gcs.IGCSCl
 }
 
 func (f *FieldService) GetAllWithPagination(ctx context.Context, param *dto.FieldRequestParam) (*util.PaginationResult, error) {
-	field, total, err := f.repository.GetField().FindAllWithPagination(ctx, param)
+	fields, total, err := f.repository.GetField().FindAllWithPagination(ctx, param)
 	if err != nil {
 		return nil, err
 	}
 
-	fieldResults := make([]dto.FieldResponse, 0, len(field))
-	for _, field := range fieldResults {
+	fieldResults := make([]dto.FieldResponse, 0, len(fields))
+	for _, field := range fields {
 		fieldResults = append(fieldResults, dto.FieldResponse{
 			UUID:         field.UUID,
 			Code:         field.Code,
@@ -67,18 +68,21 @@ func (f *FieldService) GetAllWithPagination(ctx context.Context, param *dto.Fiel
 }
 
 func (f *FieldService) GetAllWithoutPagination(ctx context.Context) ([]dto.FieldResponse, error) {
-	field, err := f.repository.GetField().FindAllWithoutPagination(ctx)
+	fields, err := f.repository.GetField().FindAllWithoutPagination(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	fieldResults := make([]dto.FieldResponse, 0, len(field))
-	for _, field := range fieldResults {
+	fieldResults := make([]dto.FieldResponse, 0, len(fields))
+	for _, field := range fields {
 		fieldResults = append(fieldResults, dto.FieldResponse{
 			UUID:         field.UUID,
 			Name:         field.Name,
+			Code:         field.Code,
 			PricePerHour: field.PricePerHour,
 			Images:       field.Images,
+			CreatedAt:    field.CreatedAt,
+			UpdatedAt:    field.UpdatedAt,
 		})
 	}
 
@@ -187,8 +191,8 @@ func (f *FieldService) Create(ctx context.Context, request *dto.FieldRequest) (*
 	return response, nil
 }
 
-func (f *FieldService) Update(ctx context.Context, uuid string, req *dto.UpdateFieldRequest) (*dto.FieldResponse, error) {
-	field, err := f.repository.GetField().FindByUUID(ctx, uuid)
+func (f *FieldService) Update(ctx context.Context, uuidParam string, req *dto.UpdateFieldRequest) (*dto.FieldResponse, error) {
+	field, err := f.repository.GetField().FindByUUID(ctx, uuidParam)
 	if err != nil {
 		return nil, err
 	}
@@ -203,7 +207,7 @@ func (f *FieldService) Update(ctx context.Context, uuid string, req *dto.UpdateF
 		}
 	}
 
-	fieldResult, err := f.repository.GetField().Update(ctx, uuid, &models.Field{
+	fieldResult, err := f.repository.GetField().Update(ctx, uuidParam, &models.Field{
 		Code:         req.Code,
 		Name:         req.Name,
 		PricePerHour: req.PricePerHour,
@@ -213,15 +217,18 @@ func (f *FieldService) Update(ctx context.Context, uuid string, req *dto.UpdateF
 		return nil, err
 	}
 
-	return &dto.FieldResponse{
-		UUID:         fieldResult.UUID,
+	uuidParsed, _ := uuid.Parse(uuidParam)
+	response := dto.FieldResponse{
+		UUID:         uuidParsed,
 		Code:         fieldResult.Code,
 		Name:         fieldResult.Name,
 		PricePerHour: fieldResult.PricePerHour,
 		Images:       fieldResult.Images,
 		CreatedAt:    fieldResult.CreatedAt,
-		UpdatedAt:    field.UpdatedAt,
-	}, nil
+		UpdatedAt:    fieldResult.UpdatedAt,
+	}
+
+	return &response, nil
 
 }
 

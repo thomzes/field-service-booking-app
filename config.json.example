@@ -33,5 +33,5 @@
     "gcsAuthProviderX509CertURL": "",
     "gcsClientX509CertURL": "",
     "gcsUniverseDomain": "",
-    "gcsBuckettName": ""
+    "gcsBucketName": ""
 }

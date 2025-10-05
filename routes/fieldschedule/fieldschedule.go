@@ -18,7 +18,7 @@ type IFieldScheduleRoute interface {
 	Run()
 }
 
-func NewFieldScheduleRoute(controller controllers.IControllerRegistry, group *gin.RouterGroup, client clients.IClientRegistry) IFieldScheduleRoutes {
+func NewFieldScheduleRoute(controller controllers.IControllerRegistry, group *gin.RouterGroup, client clients.IClientRegistry) IFieldScheduleRoute {
 	return &FieldScheduleRoute{
 		controller: controller,
 		group:      group,

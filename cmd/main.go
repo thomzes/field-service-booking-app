@@ -1,20 +1,24 @@
 package cmd
 
 import (
+	"encoding/base64"
 	"fmt"
 	"net/http"
 	"time"
+
+	"strings"
 
 	"github.com/didip/tollbooth"
 	"github.com/didip/tollbooth/limiter"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 	"github.com/spf13/cobra"
+	"github.com/thomzes/field-service-booking-app/clients"
+	"github.com/thomzes/field-service-booking-app/common/gcs"
 	"github.com/thomzes/field-service-booking-app/common/response"
 	"github.com/thomzes/field-service-booking-app/config"
 	"github.com/thomzes/field-service-booking-app/constants"
 	"github.com/thomzes/field-service-booking-app/controllers"
-	"github.com/thomzes/field-service-booking-app/database/seeders"
 	"github.com/thomzes/field-service-booking-app/domain/models"
 	"github.com/thomzes/field-service-booking-app/middlewares"
 	"github.com/thomzes/field-service-booking-app/repositories"
@@ -40,16 +44,18 @@ var command = &cobra.Command{
 		time.Local = loc
 
 		err = db.AutoMigrate(
-			&models.Role{},
-			&models.User{},
+			&models.Field{},
+			&models.FieldSchedule{},
+			&models.Time{},
 		)
 		if err != nil {
 			panic(err)
 		}
 
-		seeders.NewSeederRegistry(db).Run()
+		gcs := initGCS()
+		client := clients.NewClientRegistry()
 		repository := repositories.NewRepositoryRegistry(db)
-		service := services.NewServiceRegistry(repository)
+		service := services.NewServiceRegistry(repository, gcs)
 		controller := controllers.NewControllerRegistry(service)
 
 		router := gin.Default()
@@ -63,7 +69,7 @@ var command = &cobra.Command{
 		router.GET("/", func(ctx *gin.Context) {
 			ctx.JSON(http.StatusOK, response.Response{
 				Status:  constants.Success,
-				Message: "Welcome to user service",
+				Message: "Welcome to field service",
 			})
 		})
 		// handle CORS
@@ -83,7 +89,7 @@ var command = &cobra.Command{
 		router.Use(middlewares.RateLimiter(lmt))
 
 		group := router.Group("api/v1")
-		route := routes.NewRouteRegistry(controller, group)
+		route := routes.NewRouteRegistry(controller, group, client)
 		route.Serve()
 
 		port := fmt.Sprintf(":%d", config.Config.Port)
@@ -96,4 +102,28 @@ func Run() {
 	if err != nil {
 		panic(err)
 	}
+}
+
+func initGCS() gcs.IGCSClient {
+	decode, err := base64.StdEncoding.DecodeString(config.Config.GCSPrivateKey)
+	if err != nil {
+		panic(err)
+	}
+
+	stringPrivateKey := strings.ReplaceAll(string(decode), "\\n", "\n")
+	gcsServiceAccount := gcs.ServiceAccountKeyJSON{
+		Type:                    config.Config.GCSType,
+		ProjectID:               config.Config.GCSProjectID,
+		PrivateKeyID:            config.Config.GCSPrivateKeyID,
+		PrivateKey:              stringPrivateKey,
+		ClientEmail:             config.Config.GCSClientEmail,
+		ClientID:                config.Config.GCSClientID,
+		AuthURI:                 config.Config.GCSAuthURI,
+		TokenURI:                config.Config.GCSTokenURI,
+		AuthProviderX509CertURL: config.Config.GCSAuthProviderX508CertURL,
+		ClientX509CertURL:       config.Config.GCSClientX509CertURL,
+		UniverseDomain:          config.Config.GCSUniverseDomain,
+	}
+	gcsClient := gcs.NewGCSClient(gcsServiceAccount, config.Config.GCSBucketName)
+	return gcsClient
 }

@@ -20,7 +20,7 @@ type FieldScheduleService struct {
 
 type IFieldScheduleService interface {
 	GetAllWithPagination(context.Context, *dto.FieldScheduleRequestParam) (*util.PaginationResult, error)
-	GetAllByFieldIDAndDate(context.Context, string, string) ([]dto.FieldScheduleResponse, error)
+	GetAllByFieldIDAndDate(context.Context, string, string) ([]dto.FieldScheduleForBookingResponse, error)
 	GetByUUID(context.Context, string) (*dto.FieldScheduleResponse, error)
 	GenerateScheduleForOneMonth(context.Context, *dto.GenerateFieldScheduleForOneMonthRequest) error
 	Create(context.Context, *dto.FieldScheduleRequest) error
@@ -40,14 +40,14 @@ func (f *FieldScheduleService) GetAllWithPagination(ctx context.Context, param *
 	}
 
 	fieldScheduleResults := make([]dto.FieldScheduleResponse, 0, len(fieldSchedules))
-	for _, fieldSchedule := range fieldScheduleResults {
+	for _, fieldSchedule := range fieldSchedules {
 		fieldScheduleResults = append(fieldScheduleResults, dto.FieldScheduleResponse{
 			UUID:         fieldSchedule.UUID,
-			FieldName:    fieldSchedule.FieldName,
-			PricePerHour: fieldSchedule.PricePerHour,
-			Date:         fieldSchedule.Date,
-			Status:       fieldSchedule.Status,
-			Time:         fieldSchedule.Time,
+			FieldName:    fieldSchedule.Field.Name,
+			PricePerHour: fieldSchedule.Field.PricePerHour,
+			Date:         fieldSchedule.Date.Format("2006-01-02"),
+			Status:       fieldSchedule.Status.GetStatusString(),
+			Time:         fmt.Sprintf("%s-%s", fieldSchedule.Time.StartTime, fieldSchedule.Time.EndTime),
 			CreatedAt:    fieldSchedule.CreatedAt,
 			UpdatedAt:    fieldSchedule.UpdatedAt,
 		})
@@ -93,23 +93,29 @@ func (f *FieldScheduleService) convertMonthName(inputString string) string {
 	return formattedDate
 }
 
-func (f *FieldScheduleService) GetAllByFieldIDAndDate(ctx context.Context, id string, date string) ([]dto.FieldScheduleResponse, error) {
-	fielSchedules, err := f.repository.GetFieldSchedule().FindAllByFieldIDAndDate(ctx, id, date)
+func (f *FieldScheduleService) GetAllByFieldIDAndDate(ctx context.Context, uuid, date string) ([]dto.FieldScheduleForBookingResponse, error) {
+	field, err := f.repository.GetField().FindByUUID(ctx, uuid)
+	if err != nil {
+		return nil, err
+	}
+	fmt.Println(field)
+
+	fieldSchedules, err := f.repository.GetFieldSchedule().FindAllByFieldIDAndDate(ctx, int(field.ID), date)
 	if err != nil {
 		return nil, err
 	}
 
-	fieldScheduleResults := make([]dto.FieldScheduleResponse, 0, len(fielSchedules))
-	for _, fieldSchedule := range fieldScheduleResults {
-		fieldScheduleResults = append(fieldScheduleResults, dto.FieldScheduleResponse{
+	fieldScheduleResults := make([]dto.FieldScheduleForBookingResponse, 0, len(fieldSchedules))
+	for _, fieldSchedule := range fieldSchedules {
+		priceHour := float64(fieldSchedule.Field.PricePerHour)
+		startTime, _ := time.Parse("15:04:05", fieldSchedule.Time.StartTime)
+		endTime, _ := time.Parse("15:04:05", fieldSchedule.Time.EndTime)
+		fieldScheduleResults = append(fieldScheduleResults, dto.FieldScheduleForBookingResponse{
 			UUID:         fieldSchedule.UUID,
-			FieldName:    fieldSchedule.FieldName,
-			PricePerHour: fieldSchedule.PricePerHour,
-			Date:         fieldSchedule.Date,
-			Status:       fieldSchedule.Status,
-			Time:         fieldSchedule.Time,
-			CreatedAt:    fieldSchedule.CreatedAt,
-			UpdatedAt:    fieldSchedule.UpdatedAt,
+			PricePerHour: util.RupiahFormat(&priceHour),
+			Date:         f.convertMonthName(fieldSchedule.Date.Format("2006-01-02")),
+			Status:       fieldSchedule.Status.GetStatusString(),
+			Time:         fmt.Sprintf("%s - %s", startTime.Format("15:04"), endTime.Format("15:04")),
 		})
 	}
 
@@ -154,11 +160,9 @@ func (f *FieldScheduleService) Create(ctx context.Context, request *dto.FieldSch
 		if err != nil {
 			return err
 		}
-
 		if schedule != nil {
 			return errFieldSchedule.ErrFieldScheduleIsExist
 		}
-
 		fieldSchedules = append(fieldSchedules, models.FieldSchedule{
 			UUID:    uuid.New(),
 			FieldID: field.ID,
@@ -177,6 +181,7 @@ func (f *FieldScheduleService) Create(ctx context.Context, request *dto.FieldSch
 }
 
 func (f *FieldScheduleService) GenerateScheduleForOneMonth(ctx context.Context, request *dto.GenerateFieldScheduleForOneMonthRequest) error {
+
 	field, err := f.repository.GetField().FindByUUID(ctx, request.FieldID)
 	if err != nil {
 		return err
@@ -190,6 +195,7 @@ func (f *FieldScheduleService) GenerateScheduleForOneMonth(ctx context.Context, 
 	numberOfDays := 30
 	fieldSchedules := make([]models.FieldSchedule, 0, numberOfDays)
 	now := time.Now().Add(time.Duration(1) * 24 * time.Hour)
+
 	for i := 0; i < numberOfDays; i++ {
 		currentDate := now.AddDate(0, 0, i)
 		for _, item := range times {
@@ -237,6 +243,7 @@ func (f *FieldScheduleService) Update(ctx context.Context, uuid string, request 
 	}
 
 	if isTimeExist != nil && request.Date != fieldSchedule.Date.Format(time.DateOnly) {
+
 		checkDate, err := f.repository.GetFieldSchedule().FindByDateAndTimeID(ctx, request.Date, int(scheduleTime.ID), int(fieldSchedule.FieldID))
 		if err != nil {
 			return nil, err
@@ -264,7 +271,7 @@ func (f *FieldScheduleService) Update(ctx context.Context, uuid string, request 
 		Status:       fieldResult.Status.GetStatusString(),
 		Time:         fmt.Sprintf("%s - %s", scheduleTime.StartTime, scheduleTime.EndTime),
 		CreatedAt:    fieldResult.CreatedAt,
-		UpdatedAt:    fieldResult.UpdateAt,
+		UpdatedAt:    fieldResult.UpdatedAt,
 	}
 
 	return &response, nil

@@ -37,7 +37,7 @@ type FieldScheduleResponse struct {
 	UpdatedAt    *time.Time                        `json:"updatedAt"`
 }
 
-type FieldScheduleForrBookingResponse struct {
+type FieldScheduleForBookingResponse struct {
 	UUID         uuid.UUID                         `json:"uuid"`
 	PricePerHour string                            `json:"pricePerHour"`
 	Date         string                            `json:"date"`

@@ -39,7 +39,11 @@ func (f *FieldRepository) FindAllWithPagination(ctx context.Context, param *dto.
 	)
 
 	if param.SortColumn != nil {
-		sort = fmt.Sprintf("%s %s", *param.SortColumn, *param.SortOrder)
+		if param.SortOrder != nil {
+			sort = fmt.Sprintf("%s %s", *param.SortColumn, *param.SortOrder)
+		} else {
+			sort = *param.SortColumn
+		}
 	} else {
 		sort = "created_at desc"
 	}
@@ -93,7 +97,6 @@ func (f *FieldRepository) Create(ctx context.Context, req *models.Field) (*model
 	if err != nil {
 		return nil, errWrap.WrapError(errConstant.ErrSQLError)
 	}
-
 	return &field, nil
 }
 

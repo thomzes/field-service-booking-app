@@ -9,8 +9,8 @@ import (
 type Time struct {
 	ID        uint      `gorm:"primaryKey;autoIncrement"`
 	UUID      uuid.UUID `gorm:"type:uuid;not null"`
-	StartTime string    `gorm:"type:time without timezone;not null"`
-	EndTime   string    `gorm:"type:time without timezone; not null"`
+	StartTime string    `gorm:"type:time without time zone;not null"`
+	EndTime   string    `gorm:"type:time without time zone;not null"`
 	CreatedAt *time.Time
-	UpdateAt  *time.Time
+	UpdatedAt *time.Time
 }

@@ -36,7 +36,6 @@ func (u *UserClient) GetUserByToken(ctx context.Context) (*UserData, error) {
 	apiKey := util.GenerateSHA256(generateAPIKey)
 	token := ctx.Value(constants.Token).(string)
 	bearerToken := fmt.Sprintf("Bearer %s", token)
-
 	var response UserResponse
 	request := u.client.Client().Clone().
 		Set(constants.Authorization, bearerToken).

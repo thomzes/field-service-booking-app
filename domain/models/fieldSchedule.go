@@ -15,7 +15,7 @@ type FieldSchedule struct {
 	Date      time.Time                     `gorm:"type:date; not null"`
 	Status    constants.FieldScheduleStatus `gorm:"type:int;not null"`
 	CreatedAt *time.Time
-	UpdateAt  *time.Time
+	UpdatedAt *time.Time
 	DeletedAt *time.Time
 	Field     Field `gorm:"foreignKey:field_id;references:id;constraint:onUpdate:CASCADE, onDelete:CASCADE"`
 	Time      Time  `gorm:"foreignKey:time_id;references:id;constraint:onUpdate:CASCADE, onDelete:CASCADE"`
